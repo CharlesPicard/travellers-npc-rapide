@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PNJ Traveller</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&family=Saira+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Plan : la couverture noire à filet rouge des petits livres Traveller en bandeau ;
+   dessous, des fiches de recensement sur papier froid, où l'UPP en hexadécimal est la signature. */
+:root {
+  --paper: #e9edf0;
+  --surface: #f9fafb;
+  --ink: #12171c;
+  --muted: #56616c;
+  --rule: #c2cad2;
+  --accent: #c1121f;
+  --cover: #0b0d10;
+  --cover-ink: #f1f2f0;
+  --cover-muted: #9aa3ab;
+  --good: #1f6f43;
+  --warn: #8a5300;
+  --bad: #b3261e;
+  --display: "Saira Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1418;
+    --surface: #171d23;
+    --ink: #e7ebee;
+    --muted: #93a0ab;
+    --rule: #2c3741;
+    --accent: #f04a55;
+    --cover: #06080a;
+    --good: #5fc48d;
+    --warn: #e0a548;
+    --bad: #ff7a70;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1418;
+  --surface: #171d23;
+  --ink: #e7ebee;
+  --muted: #93a0ab;
+  --rule: #2c3741;
+  --accent: #f04a55;
+  --cover: #06080a;
+  --good: #5fc48d;
+  --warn: #e0a548;
+  --bad: #ff7a70;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 15px/1.5 var(--body);
+  -webkit-text-size-adjust: 100%;
+}
+[hidden] { display: none !important; }
+a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+code { font-family: var(--mono); font-size: 0.92em; }
+h1, h2, h3, h4 { font-family: var(--display); margin: 0; text-wrap: balance; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Bandeau : la couverture */
+.cover { background: var(--cover); color: var(--cover-ink); }
+.cover-inner {
+  max-width: 1240px; margin: 0 auto; padding: 22px 20px 0;
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 32px;
+}
+.title h1 { font-size: 40px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; line-height: 1; }
+.title p { margin: 8px 0 0; padding-top: 8px; border-top: 2px solid var(--accent); color: var(--cover-muted); font-size: 13px; letter-spacing: 0.04em; }
+.tabs { display: flex; gap: 4px; }
+.tabs a {
+  font-family: var(--display); font-size: 18px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  text-decoration: none; color: var(--cover-muted); padding: 10px 14px 12px; border-bottom: 3px solid transparent;
+}
+.tabs a:hover { color: var(--cover-ink); }
+.tabs a[aria-current="page"] { color: var(--cover-ink); border-bottom-color: var(--accent); }
+
+main { max-width: 1240px; margin: 0 auto; padding: 24px 20px 64px; }
+.k {
+  font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); margin-right: 4px;
+}
+
+/* Générer */
+.gen { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 28px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--rule); padding: 18px; display: grid; gap: 14px; position: sticky; top: 16px; }
+.panel h2, .section-head h2 { font-size: 20px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.field { display: grid; gap: 5px; min-width: 0; }
+.field label { font-family: var(--display); font-size: 14px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.hint { margin: 0; font-size: 13px; color: var(--muted); max-width: 70ch; }
+input[type="text"], input[type="number"], select, textarea {
+  width: 100%; font: inherit; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--rule); border-radius: 2px; padding: 8px 10px;
+}
+textarea { font-family: var(--mono); font-size: 13px; line-height: 1.55; resize: vertical; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; }
+.check input { margin-top: 3px; accent-color: var(--accent); }
+.field-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+button {
+  font-family: var(--display); font-size: 15px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink); background: transparent; border: 1px solid var(--rule); border-radius: 2px;
+  padding: 6px 12px; cursor: pointer;
+}
+button:hover { border-color: var(--ink); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-size: 19px; padding: 11px 14px; }
+button.primary:hover { filter: brightness(1.08); border-color: var(--accent); }
+button.keep.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+button.danger { color: var(--bad); }
+
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
+.toolbar .count { font-family: var(--display); font-size: 20px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; margin-right: auto; }
+.alert { border: 1px solid var(--bad); border-left-width: 4px; background: var(--surface); padding: 10px 14px; margin: 0 0 16px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 20px; align-items: start; }
+.empty { color: var(--muted); max-width: 60ch; }
+
+/* Fiche */
+.dossier { background: var(--surface); border: 1px solid var(--rule); border-top: 4px solid var(--cover); padding: 16px 18px 14px; display: grid; gap: 14px; min-width: 0; }
+.dossier-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
+.who { min-width: 0; }
+.who h3 { font-size: 27px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; line-height: 1.05; overflow-wrap: anywhere; }
+.role { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.upp { font: 600 27px/1 var(--mono); letter-spacing: 0.1em; text-align: right; white-space: nowrap; }
+.upp-k { display: block; font: 600 12px/1 var(--display); letter-spacing: 0.16em; color: var(--muted); margin-bottom: 5px; }
+.tags { margin: 0; display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 14px; }
+.chars { margin: 0; display: grid; grid-template-columns: repeat(6, 1fr); border: 1px solid var(--rule); }
+.char { text-align: center; padding: 6px 2px 7px; border-left: 1px solid var(--rule); }
+.char:first-child { border-left: 0; }
+.char dt { font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: 0.12em; color: var(--muted); }
+.char dd { margin: 0; font-variant-numeric: tabular-nums; }
+.char-v { font: 600 21px/1.2 var(--mono); }
+.char-dm { font: 400 12px/1.2 var(--mono); color: var(--muted); }
+.char.moved .char-v { text-decoration: underline; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.dossier h4 { font-size: 14px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.skills { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 5px; }
+.skills li { border: 1px solid var(--rule); padding: 1px 7px 2px; font-size: 14px; }
+.skills b { font: 600 14px var(--mono); color: var(--accent); margin-left: 2px; }
+.spec { color: var(--muted); }
+.zero { margin: 8px 0 0; font-size: 13.5px; color: var(--muted); }
+.assets { margin: 0; font-size: 14px; }
+.portrait, .trace ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 14px; }
+.trace summary { cursor: pointer; font-family: var(--display); font-size: 14px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.trace ul { margin-top: 8px; font-size: 13.5px; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid var(--rule); padding-top: 12px; }
+.actions .keep { margin-left: auto; }
+
+/* Données */
+.data { display: grid; gap: 30px; max-width: 900px; }
+.data > section { display: grid; gap: 12px; }
+.section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; border-bottom: 2px solid var(--accent); padding-bottom: 6px; }
+.box { background: var(--surface); border: 1px solid var(--rule); padding: 16px; display: grid; gap: 14px; }
+.pkg { background: var(--surface); border: 1px solid var(--rule); }
+.pkg + .pkg { margin-top: -1px; }
+.pkg-list { display: grid; }
+.pkg summary { cursor: pointer; padding: 9px 14px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.pkg-name { font-family: var(--display); font-size: 19px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.pkg-mods { font: 400 13px var(--mono); color: var(--muted); }
+.pkg-state { margin-left: auto; }
+.pkg-body { padding: 6px 14px 16px; display: grid; gap: 14px; border-top: 1px solid var(--rule); }
+.pkg-foot { margin: 0; }
+.pill { display: inline-block; font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; border: 1px solid var(--rule); padding: 0 7px; color: var(--muted); }
+.pill.ok { color: var(--good); border-color: var(--good); }
+.pill.warn { color: var(--warn); border-color: var(--warn); }
+.pill.error { color: var(--bad); border-color: var(--bad); }
+.issue-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 13.5px; }
+.issue-list li { padding-left: 10px; border-left: 3px solid var(--warn); }
+.issue-list li.error { border-left-color: var(--bad); }
+.msg { margin: 0; font-size: 14px; }
+.msg.error { color: var(--bad); }
+.msg.ok { color: var(--good); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+#toast {
+  position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+  background: var(--cover); color: var(--cover-ink); border-left: 4px solid var(--accent);
+  padding: 9px 16px; font-size: 14px; transition: opacity 0.18s, transform 0.18s; max-width: calc(100vw - 32px);
+}
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+dialog { border: 1px solid var(--rule); background: var(--surface); color: var(--ink); padding: 18px; width: min(640px, calc(100vw - 32px)); }
+dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
+dialog h2 { font-size: 20px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+dialog textarea { height: 240px; margin: 8px 0 12px; }
+
+@media (max-width: 860px) {
+  .gen { grid-template-columns: 1fr; }
+  .panel { position: static; }
+  .title h1 { font-size: 32px; }
+}
+@media (max-width: 420px) {
+  main { padding: 18px 16px 48px; }
+  .cover-inner { padding: 18px 16px 0; }
+  .tabs a { padding: 8px 9px 10px; font-size: 16px; }
+  .who h3 { font-size: 23px; }
+  .upp { font-size: 22px; }
+  .actions .keep { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { #toast { transition: none; } }
+</style>
+</head>
+<body>
+<header class="cover">
+  <div class="cover-inner">
+    <div class="title">
+      <h1>PNJ Traveller</h1>
+      <p>Création par packages · Traveller Companion, mise à jour 2024</p>
+    </div>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#generer">Générer</a>
+      <a href="#gardes">Gardés<span id="nav-kept-count"></span></a>
+      <a href="#donnees">Données</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div id="view-generer" class="gen">
+    <form class="panel" id="gen-form">
+      <h2>Tirage</h2>
+      <div class="field">
+        <label for="opt-background">Origine</label>
+        <select id="opt-background"></select>
+      </div>
+      <div class="field">
+        <label for="opt-career">Carrière</label>
+        <select id="opt-career"></select>
+      </div>
+      <div class="field">
+        <label for="opt-method">Caractéristiques</label>
+        <select id="opt-method"></select>
+      </div>
+      <label class="check" for="opt-finalise">
+        <input type="checkbox" id="opt-finalise">
+        <span>Appliquer la finalisation : un choix de carrière, une paire de compétences et un bénéfice, tirés au hasard</span>
+      </label>
+      <div class="two">
+        <div class="field">
+          <label for="opt-count">Nombre</label>
+          <input type="number" id="opt-count" min="1" max="20" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="opt-seed">Graine</label>
+          <input type="text" id="opt-seed" placeholder="au hasard" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+      <p class="hint">Avec la même graine, les mêmes options et les mêmes tables, le tirage redonne les mêmes PNJ.</p>
+      <button type="submit" class="primary">Générer</button>
+    </form>
+
+    <div>
+      <p class="alert" id="data-alert" hidden></p>
+      <div class="toolbar">
+        <span class="count" id="results-count"></span>
+        <button type="button" data-act="copy-all">Tout copier</button>
+        <button type="button" data-act="copy-all-md">Tout en Markdown</button>
+      </div>
+      <div class="cards" id="results"></div>
+    </div>
+  </div>
+
+  <div id="view-gardes" hidden>
+    <div class="toolbar" id="kept-toolbar">
+      <span class="count" id="kept-count"></span>
+      <button type="button" data-act="copy-kept">Tout copier</button>
+      <button type="button" data-act="copy-kept-md">Tout en Markdown</button>
+    </div>
+    <div class="cards" id="kept"></div>
+  </div>
+
+  <div id="view-donnees" class="data" hidden>
+    <div id="data-summary"></div>
+
+    <section>
+      <div class="section-head"><h2>Règles</h2></div>
+      <div class="box" id="rules-form"></div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>Packages d’origine</h2><button type="button" data-act="add-pkg" data-kind="background">Ajouter une origine</button></div>
+      <div class="pkg-list" id="pkg-background"></div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>Packages de carrière</h2><button type="button" data-act="add-pkg" data-kind="career">Ajouter une carrière</button></div>
+      <div class="pkg-list" id="pkg-career"></div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>Finalisation</h2></div>
+      <div class="box" id="final-form"></div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>Catalogue de compétences</h2></div>
+      <div class="box" id="catalog-form"></div>
+    </section>
+
+    <section>
+      <div class="section-head"><h2>Sauvegarde des tables</h2></div>
+      <div class="box">
+        <p class="hint">Copie le JSON pour garder tes tables ou les passer à un autre appareil. Pour les recharger, colle-le ici ou choisis un fichier.</p>
+        <div class="field">
+          <label for="json-text">Tables au format JSON</label>
+          <textarea id="json-text" rows="6" spellcheck="false" placeholder="Colle ici un JSON exporté"></textarea>
+        </div>
+        <div class="row">
+          <button type="button" data-act="export-json">Copier mes tables</button>
+          <button type="button" data-act="import-json">Charger le JSON collé</button>
+          <label class="hint" for="import-file">ou un fichier :</label>
+          <input type="file" id="import-file" accept=".json,application/json">
+        </div>
+        <p class="msg" id="import-msg" role="status"></p>
+        <div class="row"><button type="button" class="danger" data-act="reset-data">Rétablir les tables d’origine</button></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<dialog id="copy-dialog" aria-labelledby="copy-title">
+  <h2 id="copy-title">Copie manuelle</h2>
+  <p class="hint">Le presse-papiers n’est pas accessible ici. Sélectionne le texte et copie-le.</p>
+  <textarea id="copy-text" readonly spellcheck="false"></textarea>
+  <button type="button" data-act="close-dialog">Fermer</button>
+</dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="packages.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
